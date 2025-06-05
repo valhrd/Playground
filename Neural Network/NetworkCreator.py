@@ -14,19 +14,18 @@ class Network:
         self.hiddenGroup = None
         self.outputLayer = None
 
-    def setInputLayer(self, trainingInput: Layer):
-        if trainingInput.size != self.inputLayer:
-            print(f"Invalid input: Input size of {trainingInput.size}, InputLayer size of {self.inputLayerSize}")
-        self.inputLayer = trainingInput
+    def setInputLayer(self, trainingInput):
+        self.inputLayer.setInput(trainingInput)
 
     def getOutput(self):
-        return self.outputLayer
+        return self.outputLayer.layer
 
     def createNetwork(self):
         outputLayer = Layer(self.outputLayerSize, False, True)
         self.outputLayer = outputLayer
         hiddenGroup = self.createHiddenGroup()
-        self.attachLayers(hiddenGroup, outputLayer)
+        self.attachInputToHidden(self.inputLayer, hiddenGroup)
+        self.attachHiddenToOutput(hiddenGroup, outputLayer)
 
     def forwardPass(self):
         self.evaluateLayers()
@@ -44,12 +43,16 @@ class Network:
         next.prevLayer = start
         start.nextWeightMatrix = next.prevWeightMatrix = weights
 
-    def attachLayers(self, hiddenGroup, outputLayer):
+    def attachInputToHidden(self, inputLayer, hiddenGroup):
         if not hiddenGroup:
             print("Empty hidden group")
             return
-        
-        self.attachWeightToLayers(self.inputLayer, hiddenGroup[0])
+        self.attachWeightToLayers(inputLayer, hiddenGroup[0])
+
+    def attachHiddenToOutput(self, hiddenGroup, outputLayer):
+        if not hiddenGroup:
+            print("Empty hidden group")
+            return
         self.attachWeightToLayers(hiddenGroup[-1], outputLayer)
         
     def evaluateLayers(self):

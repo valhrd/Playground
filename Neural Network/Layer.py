@@ -14,6 +14,15 @@ class Layer:
         self.nextLayer = []
         self.nextWeightMatrix = [[]]
     
+    def setInput(self, layerRepresentation):
+        if len(layerRepresentation) != self.size:
+            print("Layer sizes do not match!")
+            return
+        temp = []
+        for index in range(len(layerRepresentation)):
+            temp.append(Neuron(index, layerRepresentation[index], 0, False))
+        self.layer = temp
+    
     def attachPrevLayer(self, layer, weights):
         self.prevLayer = layer
         self.prevWeightMatrix = weights
