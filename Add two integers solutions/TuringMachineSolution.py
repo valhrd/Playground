@@ -36,7 +36,6 @@ class DeterministicTuringMachine():
         self.input = None
 
     def run(self, input: str) -> bool:
-        print(self.INSTRUCTION_DICT)
         self.set_input(input)
         if self.print_tape:
             print(self)
@@ -133,6 +132,9 @@ class DeterministicTuringMachine():
     def clear_tape(self):
         self.tape = [self.BLANK]
 
+    def get_tape(self):
+        return self.tape
+
     def __str__(self):
         return f"""
         Head position: {self.head_pos}
@@ -148,35 +150,61 @@ if __name__ == '__main__':
         Move must either be L (left) or R (right)
     """
     blank = DeterministicTuringMachine.BLANK
-    q_accept = 9
-    q_reject = 10
+    q_accept = 19
+    q_reject = 20
 
     instructions = f"""
-        (0, 1) -> (1, %, R)
-        (1, 1) -> (1, 1, R)
-        (1, +) -> (2, 1, R)
-        (2, 1) -> (3, +, R)
-        (3, 1) -> (3, 1, R)
-        (3, _) -> (4, 1, R)
-        (4, _) -> (4, $, L)
-        (4, 1) -> (4, 1, L)
-        (4, +) -> (4, +, L)
-        (4, $) -> (4, $, L)
-        (4, X) -> (5, X, R)
-        (4, %) -> (5, %, R)
-        (5, +) -> (5, X, R)
-        (5, 1) -> (6, X, R)
-        (5, $) -> (7, $, L)
-        (6, 1) -> (6, 1, R)
-        (6, +) -> (6, +, R)
-        (6, $) -> (6, $, R)
-        (6, _) -> (4, 1, L)
-        (7, X) -> (7, X, L)
-        (7, %) -> (8, _, R)
-        (8, X) -> (8, _, R)
-        (8, $) -> (9, _, R)
+        (0, +) -> (3, %, R)
+        (0, a) -> (1, %, R)
+        (1, a) -> (1, a, R)
+        (1, +) -> (3, a, R)
+        (3, a) -> (4, +, R)
+        (3, b) -> (5, +, R)
+        (3, _) -> (7, $, L)
+        (4, a) -> (4, a, R)
+        (4, _) -> (6, a, R)
+        (5, b) -> (5, b, R)
+        (5, _) -> (6, b, R)
+        (0, b) -> (2, %, R)
+        (2, b) -> (2, b, R)
+        (2, +) -> (3, b, R)
+        (6, _) -> (7, $, L)
+        (7, a) -> (7, a, L)
+        (7, b) -> (7, b, L)
+        (7, +) -> (7, +, L)
+        (7, $) -> (7, $, L)
+        (7, %) -> (8, %, R)
+        (7, X) -> (8, X, R)
+        (8, +) -> (8, X, R)
+        (8, a) -> (9, X, R)
+        (8, b) -> (10, X, R)
+        (9, a) -> (9, a, R)
+        (9, b) -> (9, b, R)
+        (9, +) -> (9, +, R)
+        (9, $) -> (11, $, R)
+        (10, a) -> (10, a, R)
+        (10, b) -> (10, b, R)
+        (10, +) -> (10, +, R)
+        (10, $) -> (12, $, R)
+        (11, a) -> (11, a, R)
+        (11, b) -> (13, b, R)
+        (11, _) -> (7, a, L)
+        (13, b) -> (13, b, R)
+        (13, _) -> (15, _, L)
+        (15, b) -> (7, _, L)
+        (12, a) -> (14, a, R)
+        (12, b) -> (12, b, R)
+        (12, _) -> (7, b, L)
+        (14, a) -> (14, a, R)
+        (14, _) -> (16, _, L)
+        (16, a) -> (7, _, L)
+        (8, $) -> (17, $, L)
+        (17, X) -> (17, X, L)
+        (17, %) -> (18, _, R)
+        (18, X) -> (18, _, R)
+        (18, $) -> ({q_accept}, _, R)
     """
-    tm = DeterministicTuringMachine("1+", "X$%", instructions, 11, q_accept, q_reject)
+    tm = DeterministicTuringMachine("ab+", "X$%", instructions, 21, q_accept, q_reject)
     tm.print_tape_setting(True)
     tm.strict_mode_setting(False)
-    tm.run("11111+1111")
+    tm.run("+")
