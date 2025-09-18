@@ -1,2 +1,5 @@
 .venv
 data
+TorchRec/datasets
+NLP/*egg-info
+*.ipynb

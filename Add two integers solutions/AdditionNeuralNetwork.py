@@ -1,43 +1,115 @@
-import numpy as np
+import os
 
-range_vals = np.arange(-100, 101)
-n1_grid, n2_grid = np.meshgrid(range_vals, range_vals)
-n1_flat = n1_grid.flatten()
-n2_flat = n2_grid.flatten()
+import torch
+import torch.nn as nn
+import torch.functional as f
 
-X = np.stack([n1_flat, n2_flat], axis=1)
+class Adder(nn.Module):
+    def __init__(self, bound=100):
+        super(Adder, self).__init__()
+        self.net = nn.Sequential(
+            nn.Linear(2, 20),    # from 128 → 32
+            nn.Tanh(),           # smaller, faster than ReLU here
+            nn.Linear(20, 4 * bound + 1)
+        )
 
-sums = n1_flat + n2_flat
-y_indices = sums + 200
+    def forward(self, x):
+        return self.net(x)
 
-y = np.zeros((X.shape[0], 401))
-y[np.arange(X.shape[0]), y_indices] = 1
 
-weights = np.random.randn(401, 2) * 0.01
-learning_rate = 0.01
+class ModelManager:
+    def __init__(self, model, inputs, targets, lr=0.001, momentum=0.9, epochs=100):
+        self.model = model
 
-def softmax(z):
-    z = z - np.max(z, axis=1, keepdims=True)
-    exp_z = np.exp(z)
-    return exp_z / np.sum(exp_z, axis=1, keepdims=True)
+        self.inputs = inputs
+        self.targets = targets
 
-def categorical_cross_entropy(y_pred, y_true):
-    epsilon = 1e-7
-    y_pred = y_pred + epsilon
-    return -np.mean(np.sum(y_true * np.log(y_pred), axis=1))
+        self.lr = lr
+        self.momentum = momentum
+        self.epochs = epochs
+        self.criterion = nn.CrossEntropyLoss()
+        self.optimizer = torch.optim.Adam(model.parameters(), lr=self.lr)
 
-epochs = 50
 
-for epoch in range(epochs):
-    logits = X @ weights.T
-    y_pred = softmax(logits)
+    def training_loop(self):
+        for i in range(1, self.epochs + 1):
+            train_loss = self.train_model()
+            if i % 10 == 0:
+                print(f"Training loss after {i} epochs: {train_loss}")
 
-    loss = categorical_cross_entropy(y_pred, y)
+    def train_model(self):
+        model = self.model
+        model.train()
 
-    grad_logits = (y_pred - y) / X.shape[0]
-    grad_weights = grad_logits.T @ X
+        train_loss = 0
 
-    weights -= learning_rate * grad_weights
+        self.optimizer.zero_grad()
 
-    if epoch % 5 == 0:
-        print(f"Epoch {epoch}: Loss = {loss:.4f}")
+        outputs = model(self.inputs)
+        loss = self.criterion(outputs, self.targets)
+        loss.backward()
+
+        self.optimizer.step()
+        train_loss += loss.item()
+
+        return train_loss
+    
+
+    def validate_model(self):
+        model = self.model
+        model.eval()
+
+        val_loss = 0
+
+        outputs = model(self.inputs)
+        loss = self.criterion(outputs, self.targets)
+
+        val_loss += loss.item()
+
+        return val_loss
+    
+
+    def export_model(self):
+        os.makedirs("model", exist_ok=True)
+        save_path = "model/addition_state.pth"
+        torch.save(self.model.state_dict(), save_path)
+        return save_path
+
+
+    def get_model(self):
+        return self.model
+
+    
+if __name__ == '__main__':
+    bound = 100
+
+    dataset = [[i, j, i + j] for i in range(-bound, bound + 1) for j in range(-bound, bound + 1)]
+    dataset = torch.Tensor(dataset)
+
+    inputs = dataset[:,:2]
+    inputs = inputs / bound
+    
+    predictions = dataset[:,2]
+    targets = (predictions + 2 * bound).long()
+
+    print(inputs.shape)
+    print(targets.shape)
+
+    model = Adder(bound=bound)
+    model_manager = ModelManager(model, inputs, targets, lr=0.1, epochs=5000)
+
+    model_manager.training_loop()
+
+    print(model_manager.export_model())
+
+    model = model_manager.get_model()
+    model.eval()
+
+    total = 0
+    correct = 0
+    for i in range(-bound, bound + 1):
+        for j in range(-bound, bound + 1):
+            predicted = model(torch.Tensor([[i / bound, j / bound]])).argmax().item() - 2 * bound
+            total += 1
+            correct += (predicted == i + j)
+    print(f"Accuracy: {correct / total * 100:.2f}%")
