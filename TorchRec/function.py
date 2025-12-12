@@ -1,6 +1,6 @@
 import numpy as np
 
-from module import Module, Tensor
+from core import Module, Tensor
 
 # Fixed
 class ReLU(Module):
@@ -38,9 +38,6 @@ class Softmax(Module):
         temp = np.exp(x_shifted)
         out = temp / np.sum(temp, axis=-1, keepdims=True)
         return out
-
-    def backward(self, dz):
-        return self.back @ dz
 
 class LeakyReLU(Module):
     def __init__(self, alpha=0.01):

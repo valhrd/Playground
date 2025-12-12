@@ -2,21 +2,24 @@ if __name__ == "__main__":
     from tqdm import tqdm
 
     from dataset import get_mnist_dataloader
-    from module import *
+    from core import *
+    from trainables import *
     from function import *
     from loss import *
 
     class Model(Module):
         def __init__(self):
             super().__init__()
-            self.fc1 = Linear(28 * 28, 128)
-            self.relu1 = ReLU()
-            self.fc2 = Linear(128, 10)
+            self.net = [
+                Linear(28 * 28, 128),
+                LeakyReLU(),
+                Linear(128, 10)
+            ]
         
         def forward(self, x: Tensor):
-            return x.bind(self.fc1)\
-                    .bind(self.relu1)\
-                    .bind(self.fc2)
+            for mod in self.net:
+                x = x.bind(mod)
+            return x
 
     model = Model()
     epochs = 10

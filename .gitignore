@@ -3,3 +3,5 @@ data
 TorchRec/datasets
 NLP/*egg-info
 *.ipynb
+__pycache__/
+*pyc

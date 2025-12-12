@@ -1,6 +1,6 @@
 import numpy as np
 
-from module import Module, Tensor
+from core import Module, Tensor
 from function import Softmax
 
 class Loss(Module):
